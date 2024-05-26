@@ -135,8 +135,8 @@ String getHtmlContentFromFile(const char* filename);
 
 ```
 Es fa la declaració de les dues funcions que utlitzarem:
-- handle_root(void):
-- getHtmlContentFromFile(const char* filename)
+- handle_root(void): funció per gestionar les sol·licituds que arriben a l'arrel del servidor web.
+- getHtmlContentFromFile(const char* filename): funció per llegir el contingut d'un arxiu HTML en SPIFFS i el retorna com una cadena.
 
 __4. Definició de Funció per Llegir Arxius__
 ```cpp
@@ -155,6 +155,10 @@ String getHtmlContentFromFile(const char* filename) {
 }
 
 ```
+Aquesta funció primerament obre l'arxiu desde SPIFFS (SPIFF.open), si no es el cas retorna per pantalla que no s'ha pogut abrir l'arxiu.
+
+Quan obre l'arxiu, llegeix tot el contingut, el fica dins una cadena (String fileContent), tanca l'arxiu i el retorna com una cadena.
+
 __5. Contingut HTML y Gestionador de Solicituts__
 ```cpp
 String HTML = "<!DOCTYPE html>\
@@ -170,7 +174,9 @@ void handle_root() {
   server.send(200, "text/html", htmlContent);
 }
 ```
-
+- HTML: string que conté una cadena HTML.
+- handle_root: Envía el contingut del arxiu web.html a través de SPIFFS com a resposta a la sol·licitud a l'arrel del servidor. Si no es troba l'arxiu dins de SPIFFS, retorna una pàgina en blanc.
+  
 __6. Setup__
 ```cpp
 void setup() {
@@ -219,9 +225,12 @@ void setup() {
 }
 ```
 S'estableix la configuració inicial del programa:
-- Serial.begin(115200): Inicialitza la comunicació sèrie en 115200 baudis.
-- SerialBT.begin("ESP32test2"): Inicialitza la conexió Bluetooth i ens indica el nom del dispositiu que hem de buscar.
-- Serial.println: Imprimeix per pantalla que el dispositiu es disponible per linkar amb bluetooth.
+- Serial.begin(115200): Inicialitza la comunicació sèrie en 115200 bauds.
+- SPIFFS.begin(true): Munta el sistema de fitxers SPIFFS.
+- WiFi.begin(ssid, password): Intenta connectar-se a la xarxa Wi-Fi especificada
+- while (WiFi.status() != WL_CONNECTED): Espera fins que la connexió Wi-Fi estigui establerta.
+- server.on("/", handle_root): Defineix que la funció handle_root gestioni les sol·licituds a l'arrel (/) del servidor web.
+- server.begin(): Inicia el servidor web.
   
 __7. Loop__
 ```cpp
@@ -230,10 +239,15 @@ void loop() {
 }
 
 ```
-- if (Serial.available()) {...}: .Comprova si hi han dades disponibles en el port sèrie(com pot haver-hi en el monitor serial).
-- SerialBT.write(Serial.read());: Si hi ha  dades disponibles, les llegeix des del port sèrie i les envía a través de Bluetooth mitjançant l'objecte SerialBT. 
-- if (SerialBT.available()) {...}: Comprova si hhi han dades disponibles a través de Bluetooth (dades enviades des del dispositiu emparellat).
-- Serial.write(SerialBT.read());: Si hi han dades disponibles ,les llegeix des del dispositiu connectat per Bluetooth i les envie al port sèrie per poder mostrarles pel monitor.
-- delay(20);: Introduce un pequeño retraso de 20 milisegundos en cada iteración del loop para evitar una lectura o escritura excesivamente rápida, lo que ayuda a estabilizar la comunicación. Introduiex un petit retard de 20 msen cada iteració per evitar una lectura o escriptura massa ràpida i que sigui mes estable la comunicació entre dispositius.
+Aquest loop es dedica a gestionar les sol·licituds dels clients que es conecten al servidor web.
 
-Basicament les dades que escribim ja sigui pel monitor serial o per el dispositiu emparellat per Bluetooth, les sortides dels dos dispositius mostren el mateix, ja sigui llegint les dades d'un canal i fent la transmissió com rebent les dades i mostrant-les pel monitor del dispositiu.
+
+
+Resum del funcionament: 
+
+Primerament, monta un sistema SPIFFS i fa un llistat de tots els arxius que conté. 
+
+L'ESP32 es conecta al WIFI utilitzant les credencials pertinents i crea un servidor web. 
+
+Per últim, gestiona les sol·licituds que arriben per handle_root , llegeix la cadena dins SPIFFS i la retorna. 
+
